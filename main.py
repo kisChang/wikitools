@@ -133,6 +133,7 @@ class GUI:
                         self.convert_result = mammoth.convert_to_html(file)
                         self.fmt_html()
             except Exception as e:
+                print(e)
                 tk.messagebox.showerror('操作失败', '处理异常: {}'.format(e))
 
     def fmt_md(self):
@@ -140,7 +141,7 @@ class GUI:
         base_path = os.path.join(get_base_dir(), 'tool_imgs')
         clear_dir(base_path)
         ind = 0
-        data_uri_regex = re.compile(r"data:image/(.*?)\)")
+        data_uri_regex = re.compile(r"data:image/(.*?);base64,(.*?)\)")
         markdown = self.convert_result.value
         # 清理空的a标签
         markdown = re.sub(r'<a.*?></a>', " ", markdown)
@@ -151,6 +152,7 @@ class GUI:
         for match in data_uri_regex.finditer(markdown):
             image_type, img_data = match.groups()
             ind = ind + 1
+            print('image_type >>', ind, " typ>>", image_type)
             filename = '{}_{}.png'.format(source_file_name, ind)
             save_to = os.path.join(base_path, filename)
             filedata = base64.b64decode(img_data)
@@ -161,7 +163,8 @@ class GUI:
             markdown = markdown.replace(match.group(), link)
 
         self.convert_result.value = markdown
-        self.set_text()
+        # self.set_text()
+        self.save_to_file()
 
     def fmt_html(self):
         html = self.convert_result.value
@@ -195,7 +198,8 @@ class GUI:
                     elem.getparent().remove(elem)
             result = etree.tostring(tree, pretty_print=True, encoding='unicode')
         self.convert_result.value = result
-        self.set_text()
+        # self.set_text()
+        self.save_to_file()
 
     def set_text(self):
         self.text.delete(1.0, tk.END)  # 清空文本框
