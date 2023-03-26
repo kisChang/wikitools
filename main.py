@@ -36,12 +36,10 @@ class GUI:
         # 创建两个单选按钮
         self.convert_filepath = None
         self.convert_result = None
-        self.location_var = tk.StringVar()
-        self.location_var.set('HTML')
         location_frame = tk.Frame(master)
         location_frame.pack(side=tk.TOP, padx=5, pady=5)
         self.location_var = tk.StringVar()
-        self.location_var.set('HTML')
+        self.location_var.set('MarkDown')
         tk.Label(location_frame, text="请选择目标格式：") \
             .pack(side=tk.LEFT, padx=5)
         tk.Radiobutton(location_frame, text='HTML', value='HTML', variable=self.location_var, font=('楷体', 13)) \
@@ -141,7 +139,7 @@ class GUI:
         base_path = os.path.join(get_base_dir(), 'tool_imgs')
         clear_dir(base_path)
         ind = 0
-        data_uri_regex = re.compile(r"data:image/(.*?);base64,(.*?)\)")
+        data_uri_regex = re.compile(r"data:image/(.*?);base64,([A-Za-z0-9+/]+=*)([\)]?)")
         markdown = self.convert_result.value
         # 清理空的a标签
         markdown = re.sub(r'<a.*?></a>', " ", markdown)
@@ -149,10 +147,10 @@ class GUI:
         markdown = re.sub(r" {2,}__", "", markdown)
         markdown = re.sub(r"\)__", "", markdown)
         # 处理图片
-        for match in data_uri_regex.findall(markdown):
-            image_type, img_data = match.groups()
+        for match in data_uri_regex.finditer(markdown):
+            image_type = match.group(1)
+            img_data = match.group(2)
             ind = ind + 1
-            print('image_type >>', ind, " typ>>", image_type)
             filename = '{}_{}.png'.format(source_file_name, ind)
             save_to = os.path.join(base_path, filename)
             filedata = base64.b64decode(img_data)
@@ -160,11 +158,13 @@ class GUI:
                 f.write(filedata)
             file_md5 = md5(filedata)
             link = f"/uploads/mindoc/images/m_{file_md5}_r.png)"
-            markdown = markdown.replace(match, link)
+            # markdown = markdown.replace(match, link)
+            markdown = markdown.replace(match.group(), link)
+            # markdown = markdown[:match.start()] + link + markdown[:match.end()]
 
         self.convert_result.value = markdown
-        # self.set_text()
-        self.save_to_file()
+        self.set_text()
+        # self.save_to_file()
 
     def fmt_html(self):
         html = self.convert_result.value
@@ -198,8 +198,8 @@ class GUI:
                     elem.getparent().remove(elem)
             result = etree.tostring(tree, pretty_print=True, encoding='unicode')
         self.convert_result.value = result
-        # self.set_text()
-        self.save_to_file()
+        self.set_text()
+        # self.save_to_file()
 
     def set_text(self):
         self.text.delete(1.0, tk.END)  # 清空文本框
@@ -209,7 +209,7 @@ class GUI:
         file_name = self.file_label.cget("text")
         file_type = 'md' if self.location_var.get() == "MarkDown" else 'html'
         save_path = os.path.join(get_base_dir(), '{}.{}'.format(file_name, file_type))
-        with open(save_path, 'w') as f:
+        with open(save_path, 'w', encoding="utf-8") as f:
             f.write(self.convert_result.value)
             tk.messagebox.showinfo('操作成功', '文件已存储至: {}'.format(save_path))
 
