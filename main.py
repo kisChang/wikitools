@@ -140,7 +140,7 @@ class GUI:
         base_path = os.path.join(get_base_dir(), 'tool_imgs')
         clear_dir(base_path)
         ind = 0
-        data_uri_regex = re.compile(r"data:image/(.*?);base64,(.*?)\)")
+        data_uri_regex = re.compile(r"data:image/(.*?)\)")
         markdown = self.convert_result.value
         # 清理空的a标签
         markdown = re.sub(r'<a.*?></a>', " ", markdown)
