@@ -149,7 +149,7 @@ class GUI:
         markdown = re.sub(r" {2,}__", "", markdown)
         markdown = re.sub(r"\)__", "", markdown)
         # 处理图片
-        for match in data_uri_regex.finditer(markdown):
+        for match in data_uri_regex.findall(markdown):
             image_type, img_data = match.groups()
             ind = ind + 1
             print('image_type >>', ind, " typ>>", image_type)
@@ -160,7 +160,7 @@ class GUI:
                 f.write(filedata)
             file_md5 = md5(filedata)
             link = f"/uploads/mindoc/images/m_{file_md5}_r.png)"
-            markdown = markdown.replace(match.group(), link)
+            markdown = markdown.replace(match, link)
 
         self.convert_result.value = markdown
         # self.set_text()
