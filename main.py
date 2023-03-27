@@ -161,14 +161,21 @@ class GUI:
 
     # 定义文件选择函数
     def select_file(self, event=None):
-        filepath = filedialog.askopenfilename(
-            filetypes=[('Word files', '*.docx')]
-        )
+        filetypes = [('Word files', '*.docx')]
+        if self.location_var.get() == "PDF转图片":
+            filetypes = [('PDF files', '*.pdf')]
+        filepath = filedialog.askopenfilename(filetypes=filetypes)
         print(f"Selected file: {filepath}")
         self.open_file(filepath)
 
     def open_file(self, file_name):
         try:
+            if len(file_name) <= 1:
+                return
+            if file_name.startswith("{"):
+                file_name = file_name[1:len(file_name) - 1]
+            print('file_name', file_name)
+
             if file_name and os.path.isfile(file_name):
                 name, extension = os.path.splitext(file_name)
                 extension = extension.lower()
