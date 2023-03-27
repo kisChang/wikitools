@@ -23,19 +23,21 @@ def clear_dir(base_path):
 
 def get_base_dir():
     if getattr(sys, 'frozen', False):
-        print('exe')
+        print('on exe')
         return os.path.dirname(os.path.realpath(sys.executable))
     else:
-        print('test')
+        print('on test')
         return os.path.dirname(os.path.abspath(__file__))
 
 
-def pdf_image(pdf_path, img_path='./pdf_imgs/page-%i.png', zoom_x=2.0, zoom_y=2.0):
+def pdf_image(pdf_path, img_path='./pdf_imgs/', img_name='page-%i.png', zoom_x=2.0, zoom_y=2.0):
+    if not os.path.exists(img_path):
+        os.makedirs(img_path)
     mat = fitz.Matrix(zoom_x, zoom_y)
     doc = fitz.open(pdf_path)
     for page in doc:
         pix = page.get_pixmap(matrix=mat)
-        save_path = img_path % page.number
+        save_path = img_path + img_name % page.number
         pix.save(save_path)
 
 
