@@ -20,11 +20,12 @@ jobs:
       - name: Install requirements and installer
         run: |
           pip install -r requirements.txt
-          pip install pyinstaller
-          pip uninstall pathlib -y
+#          pip install pyinstaller
+#          pip uninstall pathlib -y
       - name: Run pyinstaller
         run: |
-          python -m PyInstaller main.spec
+#          python -m PyInstaller main.spec
+          python -m PyInstaller --onefile --windowed --additional-hooks-dir=. main.py
       - uses: actions/upload-artifact@v2
         with:
           name: main
