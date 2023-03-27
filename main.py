@@ -69,15 +69,25 @@ class GUI:
         self.file_opt_var = tk.StringVar()
         self.file_opt_var.set('Only')
         self.file_opt_frame = ttk.Frame(self.opt_frame)
-        # self.file_opt_frame.pack(side=tk.TOP, padx=5, pady=5)
-        tk.Label(self.file_opt_frame, text="(HTML\MD)操作：") \
+        #  第一栏配置信息
+        opt_radio_frame = ttk.Frame(self.file_opt_frame)
+        opt_radio_frame.pack(side=tk.TOP, padx=5, pady=5)
+        tk.Label(opt_radio_frame, text="(HTML\MD)操作：") \
             .pack(side=tk.LEFT, padx=5)
-        tk.Radiobutton(self.file_opt_frame, text='原文输出', value='Source', variable=self.file_opt_var, font=('楷体', 13)) \
+        tk.Radiobutton(opt_radio_frame, text='原文输出', value='Source', variable=self.file_opt_var, font=('楷体', 13)) \
             .pack(side=tk.LEFT, padx=5)
-        tk.Radiobutton(self.file_opt_frame, text='仅格式化', value='Only', variable=self.file_opt_var, font=('楷体', 13)) \
+        tk.Radiobutton(opt_radio_frame, text='仅格式化', value='Only', variable=self.file_opt_var, font=('楷体', 13)) \
             .pack(side=tk.LEFT, padx=5)
-        tk.Radiobutton(self.file_opt_frame, text='格式化带清理', value='Clear', variable=self.file_opt_var,
+        tk.Radiobutton(opt_radio_frame, text='格式化带清理', value='Clear', variable=self.file_opt_var,
                        font=('楷体', 13)) \
+            .pack(side=tk.LEFT, padx=5)
+        #  第二栏项目信息
+        opt_name_frame = ttk.Frame(self.file_opt_frame)
+        opt_name_frame.pack(side=tk.TOP, padx=5, pady=5)
+        tk.Label(opt_name_frame, text="(HTML\MD)项目标识：") \
+            .pack(side=tk.LEFT, padx=5)
+        self.mindoc_key = tk.StringVar(value='mindoc')
+        tk.Entry(opt_name_frame, font=('楷体', 15), textvariable=self.mindoc_key, width=40) \
             .pack(side=tk.LEFT, padx=5)
 
         self.pdf_zoom_var = tk.DoubleVar()
@@ -211,10 +221,8 @@ class GUI:
             with open(save_to, 'wb') as f:
                 f.write(filedata)
             file_md5 = md5(filedata)
-            link = f"/uploads/mindoc/images/m_{file_md5}_r.png)"
-            # markdown = markdown.replace(match, link)
+            link = f"/uploads/{self.mindoc_key.get()}/images/m_{file_md5}_r.png)"
             markdown = markdown.replace(match.group(), link)
-            # markdown = markdown[:match.start()] + link + markdown[:match.end()]
 
         self.convert_result.value = markdown
         self.set_text()
@@ -240,7 +248,7 @@ class GUI:
             with open(filename, "wb") as f:
                 f.write(filedata)
             file_md5 = md5(filedata)
-            img.set('src', f'/uploads/mindoc/images/m_{file_md5}_r.png')
+            img.set('src', f'/uploads/{self.mindoc_key.get()}/images/m_{file_md5}_r.png')
 
         if self.file_opt_var.get() == "Source":
             result = html
