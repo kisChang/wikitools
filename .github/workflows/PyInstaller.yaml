@@ -15,16 +15,15 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v1
         with:
-          python-version: '3.8'
+          python-version: '3.10'
           architecture: 'x64'
       - name: Install requirements and installer
         run: |
           pip install -r requirements.txt
-#          pip install pyinstaller
-#          pip uninstall pathlib -y
+          pip install pyinstaller
+          pip uninstall pathlib -y
       - name: Run pyinstaller
         run: |
-#          python -m PyInstaller main.spec
           python -m PyInstaller --onefile --windowed --additional-hooks-dir=. main.py
       - uses: actions/upload-artifact@v2
         with:
