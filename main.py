@@ -93,18 +93,29 @@ class GUI:
         self.pdf_zoom_var = tk.DoubleVar()
         self.pdf_zoom_var.set(2.0)
         self.pdf_zoom_frame = ttk.Frame(self.opt_frame)
-        # self.pdf_zoom_frame.pack(side=tk.TOP, padx=5, pady=5)
-        tk.Label(self.pdf_zoom_frame, text="(PDF)清晰度：") \
+
+        opt_radio_frame = ttk.Frame(self.pdf_zoom_frame)
+        opt_radio_frame.pack(side=tk.TOP, padx=5, pady=5)
+        tk.Label(opt_radio_frame, text="(PDF)清晰度：") \
             .pack(side=tk.LEFT, padx=5)
-        tk.Radiobutton(self.pdf_zoom_frame, text='0.8', value=0.8, variable=self.pdf_zoom_var, font=('楷体', 13)) \
+        tk.Radiobutton(opt_radio_frame, text='0.8', value=0.8, variable=self.pdf_zoom_var, font=('楷体', 13)) \
             .pack(side=tk.LEFT, padx=5)
-        tk.Radiobutton(self.pdf_zoom_frame, text='1', value=1.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
+        tk.Radiobutton(opt_radio_frame, text='1', value=1.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
             .pack(side=tk.LEFT, padx=5)
-        tk.Radiobutton(self.pdf_zoom_frame, text='2', value=2.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
+        tk.Radiobutton(opt_radio_frame, text='2', value=2.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
             .pack(side=tk.LEFT, padx=5)
-        tk.Radiobutton(self.pdf_zoom_frame, text='5', value=5.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
+        tk.Radiobutton(opt_radio_frame, text='5', value=5.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
             .pack(side=tk.LEFT, padx=5)
-        tk.Radiobutton(self.pdf_zoom_frame, text='10', value=10.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
+        tk.Radiobutton(opt_radio_frame, text='10', value=10.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
+            .pack(side=tk.LEFT, padx=5)
+
+        opt_radio_frame = ttk.Frame(self.pdf_zoom_frame)
+        opt_radio_frame.pack(side=tk.TOP, padx=5, pady=5)
+        tk.Radiobutton(opt_radio_frame, text='0.5', value=0.5, variable=self.pdf_zoom_var, font=('楷体', 13)) \
+            .pack(side=tk.LEFT, padx=5)
+        tk.Radiobutton(opt_radio_frame, text='50', value=50.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
+            .pack(side=tk.LEFT, padx=5)
+        tk.Radiobutton(opt_radio_frame, text='100', value=100.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
             .pack(side=tk.LEFT, padx=5)
 
         self.toggle_tool_mode()
@@ -160,20 +171,23 @@ class GUI:
         try:
             if file_name and os.path.isfile(file_name):
                 name, extension = os.path.splitext(file_name)
-                if self.location_var.get() == "PDF转图片":
-                    if extension != '.pdf':
+                extension = extension.lower()
+                if extension == '.pdf':
+                    self.location_var.set('PDF转图片')
+                    self.toggle_tool_mode()
+                    pdf_image(file_name, zoom_x=self.pdf_zoom_var.get(), zoom_y=self.pdf_zoom_var.get())
+                    tk.messagebox.showinfo('操作完成', '请查看文件夹 pdf_imgs')
+                elif extension == '.docx':
+                    if self.location_var.get() == "PDF转图片":
+                        self.location_var.set('MarkDown')
+                    self.convert_filepath = file_name
+                    self.file_label.config(text=os.path.basename(file_name))
+                    self.convert_run()  # 执行转换
+                else:
+                    if self.location_var.get() == "PDF转图片":
                         tk.messagebox.showerror('操作失败', '请选择Pdf 文件！')
                     else:
-                        pdf_image(file_name, zoom_x=self.pdf_zoom_var.get(), zoom_y=self.pdf_zoom_var.get())
-                        tk.messagebox.showinfo('操作完成', '请查看文件夹 pdf_imgs')
-                else:
-                    if extension != '.docx':
                         tk.messagebox.showerror('操作失败', '请选择Docx 文件！')
-                    else:
-                        self.convert_filepath = file_name
-                        self.file_label.config(text=os.path.basename(file_name))
-                        # 执行转换
-                        self.convert_run()
             else:
                 self.convert_filepath = None
                 self.file_label.config(text='您选择的不是文件！请重新选择文件或拖放文件至此')
