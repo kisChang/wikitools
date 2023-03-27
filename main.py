@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import sys
+import fitz
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
@@ -29,6 +30,15 @@ def get_base_dir():
         return os.path.dirname(os.path.abspath(__file__))
 
 
+def pdf_image(pdf_path, img_path='./pdf_imgs/page-%i.png', zoom_x=2.0, zoom_y=2.0):
+    mat = fitz.Matrix(zoom_x, zoom_y)
+    doc = fitz.open(pdf_path)
+    for page in doc:
+        pix = page.get_pixmap(matrix=mat)
+        save_path = img_path % page.number
+        pix.save(save_path)
+
+
 class GUI:
     def __init__(self, master):
         self.root = master
@@ -40,36 +50,60 @@ class GUI:
         location_frame.pack(side=tk.TOP, padx=5, pady=5)
         self.location_var = tk.StringVar()
         self.location_var.set('MarkDown')
-        tk.Label(location_frame, text="请选择目标格式：") \
+        self.location_var.trace("w", self.toggle_tool_mode)
+        tk.Label(location_frame, text="请选择作业内容：") \
             .pack(side=tk.LEFT, padx=5)
         tk.Radiobutton(location_frame, text='HTML', value='HTML', variable=self.location_var, font=('楷体', 13)) \
             .pack(side=tk.LEFT, padx=5)
         tk.Radiobutton(location_frame, text='MarkDown', value='MarkDown', variable=self.location_var, font=('楷体', 13)) \
             .pack(side=tk.LEFT, padx=5)
+        tk.Radiobutton(location_frame, text='PDF转图片', value='PDF转图片', variable=self.location_var, font=('楷体', 13)) \
+            .pack(side=tk.LEFT, padx=5)
+
+        # 操作栏
+        self.opt_frame = ttk.Frame(master)
+        self.opt_frame.pack(side=tk.TOP, padx=5, pady=5)
+
+        self.file_opt_var = tk.StringVar()
+        self.file_opt_var.set('Only')
+        self.file_opt_frame = ttk.Frame(self.opt_frame)
+        # self.file_opt_frame.pack(side=tk.TOP, padx=5, pady=5)
+        tk.Label(self.file_opt_frame, text="(HTML\MD)操作：") \
+            .pack(side=tk.LEFT, padx=5)
+        tk.Radiobutton(self.file_opt_frame, text='原文输出', value='Source', variable=self.file_opt_var, font=('楷体', 13)) \
+            .pack(side=tk.LEFT, padx=5)
+        tk.Radiobutton(self.file_opt_frame, text='仅格式化', value='Only', variable=self.file_opt_var, font=('楷体', 13)) \
+            .pack(side=tk.LEFT, padx=5)
+        tk.Radiobutton(self.file_opt_frame, text='格式化带清理', value='Clear', variable=self.file_opt_var,
+                       font=('楷体', 13)) \
+            .pack(side=tk.LEFT, padx=5)
+
+        self.pdf_zoom_var = tk.DoubleVar()
+        self.pdf_zoom_var.set(2.0)
+        self.pdf_zoom_frame = ttk.Frame(self.opt_frame)
+        # self.pdf_zoom_frame.pack(side=tk.TOP, padx=5, pady=5)
+        tk.Label(self.pdf_zoom_frame, text="(PDF)清晰度：") \
+            .pack(side=tk.LEFT, padx=5)
+        tk.Radiobutton(self.pdf_zoom_frame, text='0.8', value=0.8, variable=self.pdf_zoom_var, font=('楷体', 13)) \
+            .pack(side=tk.LEFT, padx=5)
+        tk.Radiobutton(self.pdf_zoom_frame, text='1', value=1.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
+            .pack(side=tk.LEFT, padx=5)
+        tk.Radiobutton(self.pdf_zoom_frame, text='2', value=2.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
+            .pack(side=tk.LEFT, padx=5)
+        tk.Radiobutton(self.pdf_zoom_frame, text='5', value=5.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
+            .pack(side=tk.LEFT, padx=5)
+        tk.Radiobutton(self.pdf_zoom_frame, text='10', value=10.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
+            .pack(side=tk.LEFT, padx=5)
+
+        self.toggle_tool_mode()
 
         # 创建文件选择和确认按钮
         file_frame = ttk.Frame(master)
         file_frame.pack(fill=tk.BOTH, padx=5)
-        self.file_label = ttk.Label(file_frame, text='点击选择或拖拽Docx文件到此处即可打开', font=('楷体', 15),
+        self.file_label = ttk.Label(file_frame, text='点击选择或拖拽(Docx\Pdf)文件到此处即可打开', font=('楷体', 15),
                                     anchor="center",
                                     background='#c3d7a8')
         self.file_label.pack(side=tk.LEFT, fill=tk.BOTH, padx=5, expand=True)
-
-        file_opt_frame = ttk.Frame(master)
-        file_opt_frame.pack(side=tk.TOP, padx=5, pady=5)
-        self.file_opt_var = tk.StringVar()
-        self.file_opt_var.set('Only')
-        tk.Label(file_opt_frame, text="操作：") \
-            .pack(side=tk.LEFT, padx=5)
-        tk.Radiobutton(file_opt_frame, text='原文输出', value='Source', variable=self.file_opt_var, font=('楷体', 13)) \
-            .pack(side=tk.LEFT, padx=5)
-        tk.Radiobutton(file_opt_frame, text='仅格式化', value='Only', variable=self.file_opt_var, font=('楷体', 13)) \
-            .pack(side=tk.LEFT, padx=5)
-        tk.Radiobutton(file_opt_frame, text='格式化带清理', value='Clear', variable=self.file_opt_var,
-                       font=('楷体', 13)) \
-            .pack(side=tk.LEFT, padx=5)
-        self.file_open = tk.Button(file_opt_frame, text='处理文件', font=('楷体', 13), command=self.convert_run)
-        self.file_open.pack(side=tk.LEFT, padx=5)
 
         # 启用点击功能
         self.file_label.bind("<Button-1>", self.select_file)
@@ -94,6 +128,14 @@ class GUI:
         copy_button.configure(command=self.save_to_file)
         copy_button.pack(side=tk.RIGHT)
 
+    def toggle_tool_mode(self, *args):
+        if self.location_var.get() == "PDF转图片":
+            self.pdf_zoom_frame.pack()
+            self.file_opt_frame.pack_forget()
+        else:
+            self.file_opt_frame.pack()
+            self.pdf_zoom_frame.pack_forget()
+
     # 定义文件选择函数
     def select_file(self, event=None):
         filepath = filedialog.askopenfilename(
@@ -106,11 +148,20 @@ class GUI:
         try:
             if file_name and os.path.isfile(file_name):
                 name, extension = os.path.splitext(file_name)
-                if extension != '.docx':
-                    tk.messagebox.showerror('操作失败', '请选择Docx 文件！')
+                if self.location_var.get() == "PDF转图片":
+                    if extension != '.pdf':
+                        tk.messagebox.showerror('操作失败', '请选择Pdf 文件！')
+                    else:
+                        pdf_image(file_name, zoom_x=self.pdf_zoom_var.get(), zoom_y=self.pdf_zoom_var.get())
+                        tk.messagebox.showinfo('操作完成', '请查看文件夹 pdf_imgs')
                 else:
-                    self.convert_filepath = file_name
-                    self.file_label.config(text=os.path.basename(file_name))
+                    if extension != '.docx':
+                        tk.messagebox.showerror('操作失败', '请选择Docx 文件！')
+                    else:
+                        self.convert_filepath = file_name
+                        self.file_label.config(text=os.path.basename(file_name))
+                        # 执行转换
+                        self.convert_run()
             else:
                 self.convert_filepath = None
                 self.file_label.config(text='您选择的不是文件！请重新选择文件或拖放文件至此')
@@ -137,6 +188,7 @@ class GUI:
     def fmt_md(self):
         source_file_name = self.file_label.cget("text")
         base_path = os.path.join(get_base_dir(), 'tool_imgs')
+        # 先清理
         clear_dir(base_path)
         ind = 0
         data_uri_regex = re.compile(r"data:image/(.*?);base64,([A-Za-z0-9+/]+=*)([\)]?)")
