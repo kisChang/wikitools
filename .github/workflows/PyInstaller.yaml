@@ -19,8 +19,10 @@ jobs:
           architecture: 'x64'
       - name: Install requirements and installer
         run: |
-          pip install -r requirements.txt
           pip install pyinstaller
+          pip install fitz==0.0.1.dev2 
+          pip install PyMuPDF==1.21.1
+          pip install -r requirements.txt
           pip uninstall pathlib -y
       - name: Run pyinstaller
         run: |
