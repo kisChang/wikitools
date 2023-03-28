@@ -7,8 +7,7 @@ import sys
 import fitz
 import _thread
 import tkinter as tk
-from tkinter import filedialog
-from tkinter import ttk
+from tkinter import filedialog, simpledialog, ttk
 from tkinter.scrolledtext import ScrolledText
 
 import pythoncom
@@ -18,6 +17,8 @@ import mammoth
 from lxml import etree
 from tkinterdnd2 import DND_FILES, TkinterDnD
 
+import requests
+from bs4 import BeautifulSoup
 
 def clear_dir(base_path):
     if os.path.isdir(base_path):
@@ -159,9 +160,29 @@ class GUI:
         copy_button.configure(command=self.copy_to_clipboard)
         copy_button.pack(side=tk.LEFT)
 
+        mulu_button = ttk.Button(bottom_frame, text="生成文档目录MD", width=15)
+        mulu_button.configure(command=self.btn_to_mulu)
+        mulu_button.pack(side=tk.RIGHT)
+
         copy_button = ttk.Button(bottom_frame, text="保存到文件", width=15)
         copy_button.configure(command=self.save_to_file)
         copy_button.pack(side=tk.RIGHT)
+
+    def btn_to_mulu(self):
+        url = simpledialog.askstring("生成文档目录", "请输入文档的地址：")
+        if url is not None:
+            self.to_mulu(url)
+
+    def to_mulu(self, url):
+        self.text.delete(1.0, tk.END)  # 清空文本框
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        sidebar = soup.find(id="sidebar")
+        for li in sidebar.find_all("a"):
+            href = li.attrs.get('href').replace('http://wiki.babyceo.cn', '')
+            title = li.text
+            line = f'1. [{title}]({href} "{title}")'
+            self.log(line)
 
     def toggle_tool_mode(self, *args):
         if self.location_var.get() == "PDF转图片":
