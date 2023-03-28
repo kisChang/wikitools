@@ -5,10 +5,14 @@ import re
 import shutil
 import sys
 import fitz
+import _thread
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
+
+import pythoncom
+from win32com import client
 
 import mammoth
 from lxml import etree
@@ -39,6 +43,14 @@ def pdf_image(pdf_path, img_path='./pdf_imgs/', img_name='page-%i.png', zoom_x=2
         pix = page.get_pixmap(matrix=mat)
         save_path = img_path + img_name % page.number
         pix.save(save_path)
+
+
+def docx2pdf(file, outFile="./out.pdf"):
+    word = client.Dispatch("Word.Application")
+    doc = word.Documents.Open(file)
+    doc.SaveAs(outFile, 17)
+    doc.Close()
+    word.Quit()
 
 
 class GUI:
@@ -168,7 +180,17 @@ class GUI:
         print(f"Selected file: {filepath}")
         self.open_file(filepath)
 
+    def log(self, str):
+        self.text.insert(tk.END, str)
+        self.text.insert(tk.END, "\n")
+
     def open_file(self, file_name):
+        def fun():
+            pythoncom.CoInitialize()
+            self.open_file_real(file_name)
+        _thread.start_new_thread(fun, ())
+
+    def open_file_real(self, file_name):
         try:
             if len(file_name) <= 1:
                 return
@@ -186,10 +208,26 @@ class GUI:
                     tk.messagebox.showinfo('操作完成', '请查看文件夹 pdf_imgs')
                 elif extension == '.docx':
                     if self.location_var.get() == "PDF转图片":
-                        self.location_var.set('MarkDown')
-                    self.convert_filepath = file_name
-                    self.file_label.config(text=os.path.basename(file_name))
-                    self.convert_run()  # 执行转换
+                        pass
+                        tmp_pdf = os.path.join(get_base_dir(), 'out.pdf')
+                        self.log(f"成功加载文件：{file_name}")
+                        self.log(f"1. 将文件转换为PDF")
+                        # 先转pdf
+                        docx2pdf(file_name, tmp_pdf)
+                        self.log(f"Succeed!")
+                        # 再把pdf转图片
+                        self.log(f"2. 将pdf转图片")
+                        pdf_image(tmp_pdf, zoom_x=self.pdf_zoom_var.get(), zoom_y=self.pdf_zoom_var.get())
+                        self.log(f"Succeed!")
+                        # 再删除pdf
+                        self.log(f"3. 清理")
+                        os.remove(tmp_pdf)
+                        self.log(f"Succeed!")
+                        tk.messagebox.showinfo('操作完成', '请查看文件夹 pdf_imgs')
+                    else:
+                        self.convert_filepath = file_name
+                        self.file_label.config(text=os.path.basename(file_name))
+                        self.convert_run()  # 执行转换
                 else:
                     if self.location_var.get() == "PDF转图片":
                         tk.messagebox.showerror('操作失败', '请选择Pdf 文件！')
@@ -199,6 +237,8 @@ class GUI:
                 self.convert_filepath = None
                 self.file_label.config(text='您选择的不是文件！请重新选择文件或拖放文件至此')
         except Exception as e:
+            self.log("App Error: {}".format(e))
+            print(e)
             tk.messagebox.showerror('操作失败', '文件异常: {}'.format(e))
 
     def convert_run(self):
