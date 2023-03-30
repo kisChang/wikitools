@@ -370,7 +370,7 @@ def md5(filedata):
     return hash_md5.hexdigest()
 
 
-import mimetypes
+import ota
 # .py to .exe :
 # pyinstaller  --onefile --windowed --additional-hooks-dir=. main.py
 if __name__ == '__main__':
@@ -382,4 +382,5 @@ if __name__ == '__main__':
     nCurHeight = 450  # 窗体高
     geometry = "%dx%d+%d+%d" % (nCurWid, nCurHeight, nScreenWid / 2 - nCurWid / 2, nScreenHei / 2 - nCurHeight / 2)
     root.geometry(geometry)
+    ota.check_for_updates("19", root)
     root.mainloop()
