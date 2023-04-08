@@ -383,5 +383,5 @@ if __name__ == '__main__':
     nCurHeight = 450  # 窗体高
     geometry = "%dx%d+%d+%d" % (nCurWid, nCurHeight, nScreenWid / 2 - nCurWid / 2, nScreenHei / 2 - nCurHeight / 2)
     root.geometry(geometry)
-    ota.check_for_updates("19", root)
+    ota.check_for_updates("20", root)
     root.mainloop()
