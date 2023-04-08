@@ -6,6 +6,7 @@ import shutil
 import sys
 import fitz
 import _thread
+import logging
 import tkinter as tk
 from tkinter import filedialog, simpledialog, ttk
 from tkinter.scrolledtext import ScrolledText
@@ -202,8 +203,9 @@ class GUI:
         self.open_file(filepath)
 
     def log(self, str):
-        self.text.insert(tk.END, str)
-        self.text.insert(tk.END, "\n")
+        if str is not None:
+            self.text.insert(tk.END, str)
+            self.text.insert(tk.END, "\n")
 
     def open_file(self, file_name):
         def fun():
@@ -259,7 +261,7 @@ class GUI:
                 self.file_label.config(text='您选择的不是文件！请重新选择文件或拖放文件至此')
         except Exception as e:
             self.log("App Error: {}".format(e))
-            print(e)
+            logging.exception(e)
             tk.messagebox.showerror('操作失败', '文件异常: {}'.format(e))
 
     def convert_run(self):
@@ -267,17 +269,16 @@ class GUI:
             tk.messagebox.showerror('操作失败', '请先加载文件。')
             self.select_file()
         else:
-            try:
-                with open(self.convert_filepath, 'rb') as file:
-                    if self.location_var.get() == "MarkDown":
-                        self.convert_result = mammoth.convert_to_markdown(file)
-                        self.fmt_md()
-                    else:
-                        self.convert_result = mammoth.convert_to_html(file)
-                        self.fmt_html()
-            except Exception as e:
-                print(e)
-                tk.messagebox.showerror('操作失败', '处理异常: {}'.format(e))
+            with open(self.convert_filepath, 'rb') as file:
+                if self.location_var.get() == "MarkDown":
+                    self.convert_result = mammoth.convert_to_markdown(file)
+                    self.fmt_md()
+                else:
+                    style_maps = """p =>
+                    table => table.table.table-striped.table-hover
+                    """
+                    self.convert_result = mammoth.convert_to_html(file, style_map=style_maps)
+                    self.fmt_html()
 
     def fmt_md(self):
         source_file_name = self.file_label.cget("text")
