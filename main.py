@@ -21,6 +21,9 @@ from tkinterdnd2 import DND_FILES, TkinterDnD
 import requests
 from bs4 import BeautifulSoup
 
+from PIL import Image
+from io import BytesIO
+
 def clear_dir(base_path):
     if os.path.isdir(base_path):
         shutil.rmtree(base_path)
@@ -45,6 +48,57 @@ def pdf_image(pdf_path, img_path='./pdf_imgs/', img_name='page-%i.png', zoom_x=2
         pix = page.get_pixmap(matrix=mat)
         save_path = img_path + img_name % page.number
         pix.save(save_path)
+
+
+def pdf_to_image_pdf(pdf_path, zoom_x=2.0, zoom_y=2.0):
+    _dpi = int(75 * zoom_x)
+    doc = fitz.open(pdf_path)
+    _file = None
+    merges = []
+    for page in doc:
+        img = page.get_pixmap(dpi=_dpi)
+        img_bytes = img.pil_tobytes(format="png")
+        image = Image.open(BytesIO(img_bytes))
+        if _file is None:
+            _file = image  # 取第一张图片用于创建PDF文档的首页
+        pix: Image.Image = image.quantize(colors=256, method=0).convert('RGB')  # 单张图片压缩处理
+        merges.append(pix)
+
+    _file.save(f"image_by_{_dpi}dpi.pdf", "pdf", save_all=True, append_images=merges[1:])
+
+
+def pdf_compress(_pdf, _dpi=150, _type="png", method=0):
+    '''
+    本方法适用于纯图片型（包含文字型图片）的PDF文档压缩，可复制型的文字类的PDF文档不建议使用本方法
+    :param _pdf: 文件名全路径
+    :param _dpi: 转化后图片的像素（范围72-600），默认150，想要清晰点，可以设置成高一点，这个参数直接影响PDF文件大小
+                 测试：  纯图片PDF文件（即单个页面就是一个图片，内容不可复制）
+                        300dpi，压缩率约为30-50%，即原来大小的30-50%，基本无损，看不出来压缩后导致的分辨率差异
+                        200dpi，压缩率约为20-30%，轻微有损
+                        150dpi，压缩率约为5-10%，有损，但是基本不影响图片形文字的阅读
+    :param _type: 保存格式，默认为png，其他：JPEG, PNM, PGM, PPM, PBM, PAM, PSD, PS
+    :param method:  int，图像压缩方法，只支持下面3个选项，默认值是0
+                0 : `MEDIANCUT` (median cut)
+                1 : `MAXCOVERAGE` (maximum coverage)
+                2 : `FASTOCTREE` (fast octree)
+    :return:
+    '''
+    merges = []
+    _file = None
+    with fitz.open(_pdf) as doc:
+        for i, page in enumerate(doc.pages(), start=0):
+            img = page.get_pixmap(dpi=_dpi)  # 将PDF页面转化为图片
+            img_bytes = img.pil_tobytes(format=_type)  # 将图片转为为bytes对象
+            image = Image.open(BytesIO(img_bytes))  # 将bytes对象转为PIL格式的图片对象
+            if i == 0:
+                _file = image  # 取第一张图片用于创建PDF文档的首页
+            pix: Image.Image = image.quantize(colors=256, method=method).convert('RGB')  # 单张图片压缩处理
+            merges.append(pix)  # 组装pdf
+    _file.save(f"{_pdf.rsplit('.')[0]}_by_{_dpi}dpi.pdf",
+               "pdf",  # 用PIL自带的功能保存为PDF格式文件
+               save_all=True,
+               append_images=merges[1:])
+    print("All completed！")
 
 
 def docx2pdf(file, outFile="./out.pdf"):
@@ -74,6 +128,8 @@ class GUI:
         tk.Radiobutton(location_frame, text='MarkDown', value='MarkDown', variable=self.location_var, font=('楷体', 13)) \
             .pack(side=tk.LEFT, padx=5)
         tk.Radiobutton(location_frame, text='PDF转图片', value='PDF转图片', variable=self.location_var, font=('楷体', 13)) \
+            .pack(side=tk.LEFT, padx=5)
+        tk.Radiobutton(location_frame, text='PDF转图片PDF', value='PDF转图片PDF', variable=self.location_var, font=('楷体', 13)) \
             .pack(side=tk.LEFT, padx=5)
 
         # 操作栏
@@ -112,11 +168,11 @@ class GUI:
         opt_radio_frame.pack(side=tk.TOP, padx=5, pady=5)
         tk.Label(opt_radio_frame, text="(PDF)清晰度：") \
             .pack(side=tk.LEFT, padx=5)
-        tk.Radiobutton(opt_radio_frame, text='0.8', value=0.8, variable=self.pdf_zoom_var, font=('楷体', 13)) \
-            .pack(side=tk.LEFT, padx=5)
         tk.Radiobutton(opt_radio_frame, text='1', value=1.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
             .pack(side=tk.LEFT, padx=5)
         tk.Radiobutton(opt_radio_frame, text='2', value=2.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
+            .pack(side=tk.LEFT, padx=5)
+        tk.Radiobutton(opt_radio_frame, text='3', value=3.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
             .pack(side=tk.LEFT, padx=5)
         tk.Radiobutton(opt_radio_frame, text='5', value=5.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
             .pack(side=tk.LEFT, padx=5)
@@ -125,11 +181,11 @@ class GUI:
 
         opt_radio_frame = ttk.Frame(self.pdf_zoom_frame)
         opt_radio_frame.pack(side=tk.TOP, padx=5, pady=5)
+        tk.Radiobutton(opt_radio_frame, text='0.3', value=0.3, variable=self.pdf_zoom_var, font=('楷体', 13)) \
+            .pack(side=tk.LEFT, padx=5)
         tk.Radiobutton(opt_radio_frame, text='0.5', value=0.5, variable=self.pdf_zoom_var, font=('楷体', 13)) \
             .pack(side=tk.LEFT, padx=5)
-        tk.Radiobutton(opt_radio_frame, text='50', value=50.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
-            .pack(side=tk.LEFT, padx=5)
-        tk.Radiobutton(opt_radio_frame, text='100', value=100.0, variable=self.pdf_zoom_var, font=('楷体', 13)) \
+        tk.Radiobutton(opt_radio_frame, text='0.8', value=0.8, variable=self.pdf_zoom_var, font=('楷体', 13)) \
             .pack(side=tk.LEFT, padx=5)
 
         self.toggle_tool_mode()
@@ -189,6 +245,9 @@ class GUI:
         if self.location_var.get() == "PDF转图片":
             self.pdf_zoom_frame.pack()
             self.file_opt_frame.pack_forget()
+        elif self.location_var.get() == "PDF转图片PDF":
+            self.pdf_zoom_frame.pack()
+            self.file_opt_frame.pack_forget()
         else:
             self.file_opt_frame.pack()
             self.pdf_zoom_frame.pack_forget()
@@ -197,6 +256,8 @@ class GUI:
     def select_file(self, event=None):
         filetypes = [('Word files', '*.docx')]
         if self.location_var.get() == "PDF转图片":
+            filetypes = [('PDF files', '*.pdf')]
+        elif self.location_var.get() == "PDF转图片PDF":
             filetypes = [('PDF files', '*.pdf')]
         filepath = filedialog.askopenfilename(filetypes=filetypes)
         print(f"Selected file: {filepath}")
@@ -225,10 +286,16 @@ class GUI:
                 name, extension = os.path.splitext(file_name)
                 extension = extension.lower()
                 if extension == '.pdf':
-                    self.location_var.set('PDF转图片')
-                    self.toggle_tool_mode()
-                    pdf_image(file_name, zoom_x=self.pdf_zoom_var.get(), zoom_y=self.pdf_zoom_var.get())
-                    tk.messagebox.showinfo('操作完成', '请查看文件夹 pdf_imgs')
+                    if self.location_var.get() == "PDF转图片":
+                        self.location_var.set('PDF转图片')
+                        self.toggle_tool_mode()
+                        pdf_image(file_name, zoom_x=self.pdf_zoom_var.get(), zoom_y=self.pdf_zoom_var.get())
+                        tk.messagebox.showinfo('操作完成', '请查看文件夹 pdf_imgs')
+                    if self.location_var.get() == "PDF转图片PDF":
+                        self.location_var.set('PDF转图片PDF')
+                        self.toggle_tool_mode()
+                        pdf_to_image_pdf(file_name, zoom_x=self.pdf_zoom_var.get(), zoom_y=self.pdf_zoom_var.get())
+                        tk.messagebox.showinfo('操作完成', '请查看文件 image.pdf')
                 elif extension == '.docx':
                     if self.location_var.get() == "PDF转图片":
                         pass
