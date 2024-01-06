@@ -46,8 +46,22 @@ def pdf_image(pdf_path, img_path='./pdf_imgs/', img_name='page-%i.png', zoom_x=2
     doc = fitz.open(pdf_path)
     for page in doc:
         pix = page.get_pixmap(matrix=mat)
-        save_path = img_path + img_name % page.number
+        if img_name.count('%i') > 0:
+            save_path = img_path + img_name % page.number
+        else:
+            save_path = img_path + img_name
         pix.save(save_path)
+
+
+def list_pdfs_to_img(folder_path, out_path):
+    files = os.listdir(folder_path)
+    for file in files:
+        file_path = os.path.join(folder_path, file)
+        if os.path.isdir(file_path):
+            list_pdfs_to_img(file_path, out_path)
+        else:
+            print(f"文件: {file}")
+            pdf_image(file_path, out_path, file + '.png')
 
 
 def pdf_to_image_pdf(pdf_path, zoom_x=2.0, zoom_y=2.0):
@@ -325,6 +339,7 @@ class GUI:
                         tk.messagebox.showerror('操作失败', '请选择Docx 文件！')
             else:
                 self.convert_filepath = None
+                list_pdfs_to_img(file_name, './pdf_imgs/')
                 self.file_label.config(text='您选择的不是文件！请重新选择文件或拖放文件至此')
         except Exception as e:
             self.log("App Error: {}".format(e))
@@ -450,5 +465,5 @@ if __name__ == '__main__':
     nCurHeight = 450  # 窗体高
     geometry = "%dx%d+%d+%d" % (nCurWid, nCurHeight, nScreenWid / 2 - nCurWid / 2, nScreenHei / 2 - nCurHeight / 2)
     root.geometry(geometry)
-    ota.check_for_updates("20", root)
+    ota.check_for_updates("23", root)
     root.mainloop()
