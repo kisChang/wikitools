@@ -380,12 +380,13 @@ class GUI:
             image_type = match.group(1)
             img_data = match.group(2)
             ind = ind + 1
-            filename = '{}_{}.png'.format(source_file_name, ind)
-            save_to = os.path.join(base_path, filename)
             filedata = base64.b64decode(img_data)
+            file_md5 = md5(filedata)
+            # filename = '{}_{}.png'.format(source_file_name, ind)
+            filename = '{}.png'.format(file_md5)
+            save_to = os.path.join(base_path, filename)
             with open(save_to, 'wb') as f:
                 f.write(filedata)
-            file_md5 = md5(filedata)
             link = f"/uploads/{self.mindoc_key.get()}/images/m_{file_md5}_r.png)"
             markdown = markdown.replace(match.group(), link)
 
